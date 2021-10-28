@@ -1,23 +1,31 @@
+import React, { useState } from "react";
+import { useRouter } from "next/router";
 import Layout from "../components/Layout";
-import { Formik, useFormik } from "formik";
+import { useFormik } from "formik";
 import * as yup from "yup";
-import { useQuery, gql } from "@apollo/client";
+import { useMutation, gql } from "@apollo/client";
 
-const QUERY = gql`
-  query obtenerProductos {
-    obternerProductos {
+const NUEVO_USUARIO = gql`
+  mutation nuevoUsuario($input: UsuarioInput) {
+    nuevoUsuario(input: $input) {
       id
       nombre
-      existencia
-      precio
+      apellido
       creado
     }
   }
 `;
 const NuevaCuenta = () => {
   //Obtener Productos de GraphQL
-  const { data, loading, error } = useQuery(QUERY);
-  console.log(data);
+  // const { data, loading, error } = useQuery(QUERY);
+  // console.log(data);
+  // Estado para el mensaje de error
+  const [mensaje, setMensaje] = useState(null);
+  // Registrar nuevo usuario
+  const [nuevoUsuario] = useMutation(NUEVO_USUARIO);
+
+  const router = useRouter();
+
   //Validación del formulario
   const formik = useFormik({
     initialValues: {
@@ -38,14 +46,51 @@ const NuevaCuenta = () => {
         .required("El password no puede ir vacio")
         .min(6, "El password debe ser al menos 6 caracteres"),
     }),
-    onSubmit: (valores) => {
-      console.log("enviando");
-      console.log(valores);
+    onSubmit: async (valores) => {
+      // console.log("enviando");
+      // console.log(valores);
+      const { nombre, apellido, email, password } = valores;
+      try {
+        const { data } = await nuevoUsuario({
+          variables: {
+            input: {
+              nombre,
+              apellido,
+              email,
+              password,
+            },
+          },
+        });
+        console.log(data);
+        // Se creo correctamente el usuario
+        setMensaje(
+          `Se creo correctamente el usuario: ${data.nuevoUsuario.nombre}`
+        );
+        setTimeout(() => {
+          setMensaje(null);
+          router.push("/login");
+        }, 3000);
+      } catch (error) {
+        setMensaje(error.message);
+        // console.log(error.message);
+        setTimeout(() => {
+          setMensaje(null);
+        }, 3000);
+      }
     },
   });
+
+  const mostrarMensaje = () => {
+    return (
+      <div className="bg-white py-2 px-3 w-full my-3 max-w-sm text-center mx-auto">
+        <p>{mensaje}</p>
+      </div>
+    );
+  };
   return (
     <>
       <Layout>
+        {mensaje && mostrarMensaje()}
         <h2 className="text-center text-2xl text-white font-light">
           Crear Nueva Cuenta
         </h2>
