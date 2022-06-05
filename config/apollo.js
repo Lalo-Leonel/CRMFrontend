@@ -7,10 +7,12 @@ const httpLink = createHttpLink({
   // fetch,
 });
 const authLink = setContext((_, { headers }) => {
+  //Leer el Storage alamacenado
+  const token = localStorage.getItem("token");
   return {
     headers: {
       ...headers,
-      miPropioHeader: "Hola!...",
+      authorization: token,
     },
   };
 });
